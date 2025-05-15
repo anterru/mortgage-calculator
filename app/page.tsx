@@ -158,7 +158,6 @@ export default function RealEstateCalculator() {
     if (selectedBankId) {
       const selectedBank = bankOffers.find((bank) => bank.id === selectedBankId)
       if (selectedBank) {
-        setMortgageAmount(selectedBank.mortgageAmount)
         setMortgageYears(selectedBank.years)
         setInterestRate(selectedBank.interestRate)
       }
@@ -208,16 +207,8 @@ export default function RealEstateCalculator() {
   // Reset to calculated mortgage
   const handleResetToCalculated = () => {
     setSelectedBankId(null)
-
-    // Reset to calculated mortgage amount
-    const taxes = apartmentPrice * (taxRate / 100)
-    const totalInvestment = apartmentPrice + taxes + remodeling
-    const contribution = totalInvestment * (contributionPercent / 100)
-    const mortgage = totalInvestment - contribution
-
-    setMortgageAmount(mortgage)
     setMortgageYears(30) // Default
-    setInterestRate(3.5) // Default
+    setInterestRate(1.9) // Default
   }
 
   // Format currency
@@ -242,20 +233,40 @@ export default function RealEstateCalculator() {
   const exportToCSV = () => {
     // Define the key state values to export
     const stateToExport = {
+      // Purchase details
       apartmentPrice,
       taxRate,
       remodeling,
       contributionPercent,
+      
+      // Mortgage details
       mortgageYears,
       interestRate,
+      
+      // Rental details
       monthlyRent,
-      totalExpenses,
-      irpfRate
+      
+      // Expenses (as JSON string)
+      expenses: JSON.stringify(expenses).replace(/,/g, ';'),
+      
+      // Tax details
+      irpfRate,
+      
+      // Bank offers (as JSON string)
+      bankOffers: JSON.stringify(bankOffers).replace(/,/g, ';'),
+      selectedBankId
     };
     
-    // Convert to CSV format
+    // Convert to CSV format with proper escaping
     const csvHeader = Object.keys(stateToExport).join(',');
-    const csvValues = Object.values(stateToExport).join(',');
+    const csvValues = Object.values(stateToExport).map(value => {
+      // Wrap strings in quotes and escape any existing quotes
+      if (typeof value === 'string') {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    }).join(',');
+    
     const csvContent = `${csvHeader}\n${csvValues}`;
     
     // Create a blob
@@ -289,7 +300,6 @@ export default function RealEstateCalculator() {
       saveFile();
     } else {
       // Fallback for browsers that don't support showSaveFilePicker
-      // This will still download but without folder selection
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       
@@ -315,28 +325,66 @@ export default function RealEstateCalculator() {
         
         if (lines.length < 2) throw new Error('Invalid CSV format');
         
-        const headers = lines[0].split(',');
-        const values = lines[1].split(',');
+        // Parse CSV properly, handling quoted values
+        const parseCSVLine = (line: string) => {
+          const result = [];
+          let current = '';
+          let inQuotes = false;
+          
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                // Handle escaped quotes
+                current += '"';
+                i++;
+              } else {
+                inQuotes = !inQuotes;
+              }
+            } else if (char === ',' && !inQuotes) {
+              result.push(current);
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          result.push(current);
+          return result;
+        };
+        
+        const headers = parseCSVLine(lines[0]);
+        const values = parseCSVLine(lines[1]);
         
         // Create an object from headers and values
-        const importedState: Record<string, number> = {};
+        const importedState: Record<string, any> = {};
         headers.forEach((header, index) => {
-          importedState[header] = parseFloat(values[index]);
+          const value = values[index];
+          // Handle special cases for JSON strings
+          if (header === 'expenses' || header === 'bankOffers') {
+            try {
+              // Replace semicolons back to commas before parsing JSON
+              importedState[header] = JSON.parse(value.replace(/;/g, ','));
+            } catch (err) {
+              console.error(`Error parsing ${header}:`, err);
+              importedState[header] = header === 'expenses' ? [] : [];
+            }
+          } else {
+            importedState[header] = value;
+          }
         });
         
         // Update state variables with imported values
-        if ('apartmentPrice' in importedState) setApartmentPrice(importedState.apartmentPrice);
-        if ('taxRate' in importedState) setTaxRate(importedState.taxRate);
-        if ('remodeling' in importedState) setRemodeling(importedState.remodeling);
-        if ('contributionPercent' in importedState) setContributionPercent(importedState.contributionPercent);
-        if ('mortgageYears' in importedState) setMortgageYears(importedState.mortgageYears);
-        if ('interestRate' in importedState) setInterestRate(importedState.interestRate);
-        if ('monthlyRent' in importedState) setMonthlyRent(importedState.monthlyRent);
-        if ('totalExpenses' in importedState) setExpenses(expenses.map(expense => ({ ...expense, amount: importedState.totalExpenses })));
-        if ('irpfRate' in importedState) setIrpfRate(importedState.irpfRate);
-        
-        // Reset bank selection since we've changed core values
-        setSelectedBankId(null);
+        if ('apartmentPrice' in importedState) setApartmentPrice(Number(importedState.apartmentPrice));
+        if ('taxRate' in importedState) setTaxRate(Number(importedState.taxRate));
+        if ('remodeling' in importedState) setRemodeling(Number(importedState.remodeling));
+        if ('contributionPercent' in importedState) setContributionPercent(Number(importedState.contributionPercent));
+        if ('mortgageYears' in importedState) setMortgageYears(Number(importedState.mortgageYears));
+        if ('interestRate' in importedState) setInterestRate(Number(importedState.interestRate));
+        if ('monthlyRent' in importedState) setMonthlyRent(Number(importedState.monthlyRent));
+        if ('expenses' in importedState) setExpenses(importedState.expenses);
+        if ('irpfRate' in importedState) setIrpfRate(Number(importedState.irpfRate));
+        if ('bankOffers' in importedState) setBankOffers(importedState.bankOffers);
+        if ('selectedBankId' in importedState) setSelectedBankId(importedState.selectedBankId);
         
         // Clear the file input
         if (fileInputRef.current) fileInputRef.current.value = '';

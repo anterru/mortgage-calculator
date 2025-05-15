@@ -41,7 +41,6 @@ export default function RealEstateCalculator() {
   const [contributionAmount, setContributionAmount] = useState(0)
 
   // Mortgage state
-  const [mortgageAmount, setMortgageAmount] = useState(0)
   const [mortgageYears, setMortgageYears] = useState(30)
   const [interestRate, setInterestRate] = useState(1.9)
   const [monthlyPayment, setMonthlyPayment] = useState(0)
@@ -55,7 +54,6 @@ export default function RealEstateCalculator() {
 
   // New bank form state
   const [newBankName, setNewBankName] = useState("")
-  const [newBankMortgageAmount, setNewBankMortgageAmount] = useState("")
   const [newBankYears, setNewBankYears] = useState("")
   const [newBankInterestRate, setNewBankInterestRate] = useState("")
 
@@ -97,29 +95,31 @@ export default function RealEstateCalculator() {
 
     // Only update mortgage amount if no bank is selected
     if (!selectedBankId) {
-      setMortgageAmount(mortgage)
+      setMortgageYears(30)
+      setInterestRate(1.9)
     }
   }, [apartmentPrice, taxRate, remodeling, contributionPercent, selectedBankId])
 
   // Calculate mortgage details
   useEffect(() => {
-    if (mortgageAmount > 0 && mortgageYears > 0 && interestRate > 0) {
+    const mortgage = totalInvestment - contributionAmount;
+    if (mortgage > 0 && mortgageYears > 0 && interestRate > 0) {
       const monthlyRate = interestRate / 100 / 12
       const numberOfPayments = mortgageYears * 12
 
       // Monthly payment formula: P * (r(1+r)^n) / ((1+r)^n - 1)
       const monthly =
-        (mortgageAmount * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments))) /
+        (mortgage * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments))) /
         (Math.pow(1 + monthlyRate, numberOfPayments) - 1)
 
-        const interest = monthly * numberOfPayments - mortgageAmount
-        const total = totalInvestment + interest
+      const interest = monthly * numberOfPayments - mortgage
+      const total = totalInvestment + interest
 
       setMonthlyPayment(monthly)
       setTotalInterest(interest)
       setTotalMortgage(total)
     }
-  }, [mortgageAmount, mortgageYears, interestRate])
+  }, [totalInvestment, contributionAmount, mortgageYears, interestRate])
 
   // Calculate rental income and profitability
   useEffect(() => {
@@ -158,20 +158,19 @@ export default function RealEstateCalculator() {
 
   // Add a new bank offer
   const handleAddBank = () => {
-    if (newBankName && newBankMortgageAmount && newBankYears && newBankInterestRate) {
+    if (newBankName && newBankYears && newBankInterestRate) {
       const newBank: BankOffer = {
         id: Date.now().toString(),
         name: newBankName,
-        mortgageAmount: Number(newBankMortgageAmount),
         years: Number(newBankYears),
         interestRate: Number(newBankInterestRate),
+        mortgageAmount: totalInvestment - contributionAmount
       }
 
       setBankOffers([...bankOffers, newBank])
 
       // Reset form
       setNewBankName("")
-      setNewBankMortgageAmount("")
       setNewBankYears("")
       setNewBankInterestRate("")
       setIsAddingBank(false)
@@ -183,14 +182,6 @@ export default function RealEstateCalculator() {
     setBankOffers(bankOffers.filter((bank) => bank.id !== id))
     if (selectedBankId === id) {
       setSelectedBankId(null)
-
-      // Reset to calculated mortgage amount
-      const taxes = apartmentPrice * (taxRate / 100)
-      const totalInvestment = apartmentPrice + taxes + remodeling
-      const contribution = totalInvestment * (contributionPercent / 100)
-      const mortgage = totalInvestment - contribution
-
-      setMortgageAmount(mortgage)
       setMortgageYears(30) // Default
       setInterestRate(1.9) // Default
     }
@@ -425,15 +416,6 @@ export default function RealEstateCalculator() {
     ));
   };
 
-  // Calculate mortgage amount based on contribution
-  useEffect(() => {
-    const taxes = apartmentPrice * (taxRate / 100);
-    const totalInvestment = apartmentPrice + taxes + remodeling;
-    const contribution = totalInvestment * (contributionPercent / 100);
-    const mortgage = totalInvestment - contribution;
-    setMortgageAmount(mortgage);
-  }, [apartmentPrice, taxRate, remodeling, contributionPercent]);
-
   return (
     <div className="container mx-auto py-6">
       <div className="flex flex-col space-y-4">
@@ -666,18 +648,6 @@ export default function RealEstateCalculator() {
                                 id="bank-name"
                                 value={newBankName}
                                 onChange={(e) => setNewBankName(e.target.value)}
-                                className="col-span-3"
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="mortgage-amount" className="text-right">
-                                Mortgage Amount
-                              </Label>
-                              <Input
-                                id="mortgage-amount"
-                                type="number"
-                                value={newBankMortgageAmount}
-                                onChange={(e) => setNewBankMortgageAmount(e.target.value)}
                                 className="col-span-3"
                               />
                             </div>

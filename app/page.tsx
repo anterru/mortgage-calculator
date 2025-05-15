@@ -31,16 +31,16 @@ interface BankOffer {
 
 export default function RealEstateCalculator() {
   // Purchase price state
-  const [apartmentPrice, setApartmentPrice] = useState(300000)
+  const [apartmentPrice, setApartmentPrice] = useState(350000)
   const [taxRate, setTaxRate] = useState(10)
-  const [remodeling, setRemodeling] = useState(15000)
+  const [remodeling, setRemodeling] = useState(2000)
   const [contributionPercent, setContributionPercent] = useState(20)
   const [contributionAmount, setContributionAmount] = useState(0)
 
   // Mortgage state
   const [mortgageAmount, setMortgageAmount] = useState(0)
   const [mortgageYears, setMortgageYears] = useState(30)
-  const [interestRate, setInterestRate] = useState(3.5)
+  const [interestRate, setInterestRate] = useState(1.9)
   const [monthlyPayment, setMonthlyPayment] = useState(0)
   const [totalInterest, setTotalInterest] = useState(0)
   const [totalMortgage, setTotalMortgage] = useState(0)
@@ -69,11 +69,26 @@ export default function RealEstateCalculator() {
   const [cashflow, setCashflow] = useState(0)
   const [monthlyCashflow, setMonthlyCashflow] = useState(0)
 
+  // Calculate total investment
+  const totalInvestment = apartmentPrice + apartmentPrice * (taxRate / 100) + remodeling
+
+  // Handle contribution amount change (updates the percentage)
+  const handleContributionAmountChange = (amount: number) => {
+    // Calculate new percentage based on amount
+    const newPercentage = (amount / totalInvestment) * 100;
+    
+    // Limit to valid percentage between 0-100
+    const clampedPercentage = Math.min(Math.max(0, newPercentage), 100);
+    
+    // Update percentage state
+    setContributionPercent(clampedPercentage);
+  };
+
   // Calculate total investment and mortgage needed
   useEffect(() => {
     const taxes = apartmentPrice * (taxRate / 100)
     const totalInvestment = apartmentPrice + taxes + remodeling
-    const contribution = totalInvestment * (contributionPercent / 100)
+    const contribution = apartmentPrice * (contributionPercent / 100) // TODO: Is it apartment price or total investment?
     const mortgage = totalInvestment - contribution
 
     setContributionAmount(contribution)
@@ -95,8 +110,8 @@ export default function RealEstateCalculator() {
         (mortgageAmount * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments))) /
         (Math.pow(1 + monthlyRate, numberOfPayments) - 1)
 
-      const total = monthly * numberOfPayments
-      const interest = total - mortgageAmount
+        const interest = monthly * numberOfPayments - mortgageAmount
+        const total = totalInvestment + interest
 
       setMonthlyPayment(monthly)
       setTotalInterest(interest)
@@ -176,7 +191,7 @@ export default function RealEstateCalculator() {
 
       setMortgageAmount(mortgage)
       setMortgageYears(30) // Default
-      setInterestRate(3.5) // Default
+      setInterestRate(1.9) // Default
     }
   }
 
@@ -212,9 +227,6 @@ export default function RealEstateCalculator() {
       maximumFractionDigits: 2,
     }).format(value / 100)
   }
-
-  // Calculate total investment
-  const totalInvestment = apartmentPrice + apartmentPrice * (taxRate / 100) + remodeling
 
   return (
     <div className="container mx-auto py-6">
@@ -294,19 +306,51 @@ export default function RealEstateCalculator() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="contribution">Your Contribution (%)</Label>
-                        <div className="flex items-center space-x-2">
-                          <div className="flex-1">
-                            <Slider
-                              id="contribution"
-                              min={0}
-                              max={100}
-                              step={1}
-                              value={[contributionPercent]}
-                              onValueChange={(value) => setContributionPercent(value[0])}
-                            />
+                        <Label htmlFor="contribution" className="text-sm">Your Contribution</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Percentage input */}
+                          <div className="space-y-1">
+                            <Label htmlFor="contributionPercent" className="text-xs">Percentage</Label>
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                id="contributionPercent"
+                                type="number"
+                                min={0}
+                                max={100}
+                                className="text-sm"
+                                value={contributionPercent.toFixed(2)}
+                                onChange={(e) => {
+                                  const value = Number(e.target.value);
+                                  if (value >= 0 && value <= 100) {
+                                    setContributionPercent(value);
+                                  }
+                                }}
+                              />
+                              <span className="text-sm font-medium">%</span>
+                            </div>
                           </div>
-                          <span className="text-sm font-medium w-12">{contributionPercent}%</span>
+                          
+                          {/* Amount input */}
+                          <div className="space-y-1">
+                            <Label htmlFor="contributionAmount" className="text-xs">Amount</Label>
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                id="contributionAmount"
+                                type="number"
+                                min={0}
+                                max={totalInvestment}
+                                className="text-sm"
+                                value={contributionAmount.toFixed(0)}
+                                onChange={(e) => {
+                                  const value = Number(e.target.value);
+                                  if (value >= 0 && value <= totalInvestment) {
+                                    handleContributionAmountChange(value);
+                                  }
+                                }}
+                              />
+                              <span className="text-sm text-muted-foreground">€</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -339,7 +383,7 @@ export default function RealEstateCalculator() {
                         <h3 className="font-medium mb-2">Financing</h3>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="text-sm text-muted-foreground">
-                            Your Contribution ({contributionPercent}%):
+                            Your Contribution
                           </div>
                           <div className="text-sm font-medium text-right">{formatCurrency(contributionAmount)}</div>
 
@@ -836,7 +880,7 @@ export default function RealEstateCalculator() {
 
                       <Separator className="col-span-2 my-1" />
 
-                      <div className="text-sm">Your Contribution ({contributionPercent}%):</div>
+                      <div className="text-sm">Your Contribution</div>
                       <div className="text-sm font-medium text-right">{formatCurrency(contributionAmount)}</div>
 
                       <div className="text-sm">Mortgage Needed:</div>

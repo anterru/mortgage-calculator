@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Calculator, Home, LineChart, PiggyBank, BarChart3, Plus, Building, Trash2 } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Calculator, Home, LineChart, PiggyBank, BarChart3, Plus, Building, Trash2, Download, Upload } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,6 +30,9 @@ interface BankOffer {
 }
 
 export default function RealEstateCalculator() {
+  // Reference for file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   // Purchase price state
   const [apartmentPrice, setApartmentPrice] = useState(350000)
   const [taxRate, setTaxRate] = useState(10)
@@ -57,7 +60,7 @@ export default function RealEstateCalculator() {
   const [newBankInterestRate, setNewBankInterestRate] = useState("")
 
   // Rental state
-  const [monthlyRent, setMonthlyRent] = useState(1200)
+  const [monthlyRent, setMonthlyRent] = useState(1600)
   const [maintenanceExpenses, setMaintenanceExpenses] = useState(100)
   const [annualRent, setAnnualRent] = useState(0)
   const [annualMaintenance, setAnnualMaintenance] = useState(0)
@@ -228,13 +231,153 @@ export default function RealEstateCalculator() {
     }).format(value / 100)
   }
 
+  // Export state to CSV
+  const exportToCSV = () => {
+    // Define the key state values to export
+    const stateToExport = {
+      apartmentPrice,
+      taxRate,
+      remodeling,
+      contributionPercent,
+      mortgageYears,
+      interestRate,
+      monthlyRent,
+      maintenanceExpenses,
+      irpfRate
+    };
+    
+    // Convert to CSV format
+    const csvHeader = Object.keys(stateToExport).join(',');
+    const csvValues = Object.values(stateToExport).join(',');
+    const csvContent = `${csvHeader}\n${csvValues}`;
+    
+    // Create a blob
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // Use the showSaveFilePicker API if available (modern browsers)
+    if ('showSaveFilePicker' in window) {
+      const saveFile = async () => {
+        try {
+          // Show the file picker
+          const handle = await (window as any).showSaveFilePicker({
+            suggestedName: `real-estate-calculator-${new Date().toISOString().slice(0,10)}.csv`,
+            types: [{
+              description: 'CSV File',
+              accept: { 'text/csv': ['.csv'] },
+            }],
+          });
+          
+          // Create a writable stream
+          const writable = await handle.createWritable();
+          
+          // Write the blob to the file
+          await writable.write(blob);
+          await writable.close();
+        } catch (err) {
+          // User might have canceled the save dialog
+          console.log('Save canceled or error occurred:', err);
+        }
+      };
+      
+      saveFile();
+    } else {
+      // Fallback for browsers that don't support showSaveFilePicker
+      // This will still download but without folder selection
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `real-estate-calculator-${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+  
+  // Import state from CSV
+  const importFromCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const lines = content.split('\n');
+        
+        if (lines.length < 2) throw new Error('Invalid CSV format');
+        
+        const headers = lines[0].split(',');
+        const values = lines[1].split(',');
+        
+        // Create an object from headers and values
+        const importedState: Record<string, number> = {};
+        headers.forEach((header, index) => {
+          importedState[header] = parseFloat(values[index]);
+        });
+        
+        // Update state variables with imported values
+        if ('apartmentPrice' in importedState) setApartmentPrice(importedState.apartmentPrice);
+        if ('taxRate' in importedState) setTaxRate(importedState.taxRate);
+        if ('remodeling' in importedState) setRemodeling(importedState.remodeling);
+        if ('contributionPercent' in importedState) setContributionPercent(importedState.contributionPercent);
+        if ('mortgageYears' in importedState) setMortgageYears(importedState.mortgageYears);
+        if ('interestRate' in importedState) setInterestRate(importedState.interestRate);
+        if ('monthlyRent' in importedState) setMonthlyRent(importedState.monthlyRent);
+        if ('maintenanceExpenses' in importedState) setMaintenanceExpenses(importedState.maintenanceExpenses);
+        if ('irpfRate' in importedState) setIrpfRate(importedState.irpfRate);
+        
+        // Reset bank selection since we've changed core values
+        setSelectedBankId(null);
+        
+        // Clear the file input
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        
+      } catch (error) {
+        console.error('Error importing data:', error);
+        alert('Error importing data. Please make sure the file is in the correct format.');
+      }
+    };
+    
+    reader.readAsText(file);
+  };
+
+  // Trigger file input click
+  const handleImportClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex flex-col space-y-4">
-        <h1 className="text-3xl font-bold tracking-tight">Real Estate Investment Calculator</h1>
-        <p className="text-muted-foreground">
-          Calculate the financial aspects of buying, mortgaging, and renting an apartment.
-        </p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Real Estate Investment Calculator</h1>
+            <p className="text-muted-foreground">
+              Calculate the financial aspects of buying, mortgaging, and renting an apartment.
+            </p>
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm" onClick={exportToCSV}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleImportClick}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={importFromCSV}
+              accept=".csv"
+              className="hidden"
+            />
+          </div>
+        </div>
 
         <Tabs defaultValue="calculator" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -645,7 +788,7 @@ export default function RealEstateCalculator() {
                             value={monthlyRent}
                             onChange={(e) => setMonthlyRent(Number(e.target.value))}
                           />
-                          <span className="text-sm text-muted-foreground w-24">{formatCurrency(monthlyRent)}</span>
+                          <span className="text-sm text-muted-foreground w-24">{formatCurrency(monthlyRent - maintenanceExpenses - irpfAmount / 12)}</span>
                         </div>
                       </div>
 
@@ -839,8 +982,8 @@ export default function RealEstateCalculator() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-muted-foreground">Monthly Rent</h3>
-                      <p className="text-2xl font-bold">{formatCurrency(monthlyRent)}</p>
+                      <h3 className="text-sm font-medium text-muted-foreground">Net monthly income</h3>
+                      <p className="text-2xl font-bold">{formatCurrency(monthlyRent - maintenanceExpenses - irpfAmount / 12)}</p>
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium text-muted-foreground">Monthly Cashflow</h3>
@@ -855,7 +998,7 @@ export default function RealEstateCalculator() {
               {/* Investment and Mortgage Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Investment Breakdown */}
-                <Card>
+                {/* <Card>
                   <CardHeader>
                     <CardTitle>Investment Breakdown</CardTitle>
                     <CardDescription>How your investment is distributed</CardDescription>
@@ -892,9 +1035,9 @@ export default function RealEstateCalculator() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
+                </Card> */}
 
-                {/* Mortgage Breakdown */}
+                {/* Mortgage Breakdown
                 <Card>
                   <CardHeader>
                     <CardTitle>Mortgage Analysis</CardTitle>
@@ -935,7 +1078,7 @@ export default function RealEstateCalculator() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
+                </Card> */}
               </div>
 
               {/* Rental and Cashflow Analysis */}

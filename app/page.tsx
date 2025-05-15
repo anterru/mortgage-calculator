@@ -233,7 +233,6 @@ export default function RealEstateCalculator() {
       contributionPercent,
       
       // Mortgage details
-      mortgageAmount,
       mortgageYears,
       interestRate,
       
@@ -372,7 +371,6 @@ export default function RealEstateCalculator() {
         if ('taxRate' in importedState) setTaxRate(Number(importedState.taxRate));
         if ('remodeling' in importedState) setRemodeling(Number(importedState.remodeling));
         if ('contributionPercent' in importedState) setContributionPercent(Number(importedState.contributionPercent));
-        if ('mortgageAmount' in importedState) setMortgageAmount(Number(importedState.mortgageAmount));
         if ('mortgageYears' in importedState) setMortgageYears(Number(importedState.mortgageYears));
         if ('interestRate' in importedState) setInterestRate(Number(importedState.interestRate));
         if ('monthlyRent' in importedState) setMonthlyRent(Number(importedState.monthlyRent));
@@ -426,6 +424,15 @@ export default function RealEstateCalculator() {
       expense.id === id ? { ...expense, amount } : expense
     ));
   };
+
+  // Calculate mortgage amount based on contribution
+  useEffect(() => {
+    const taxes = apartmentPrice * (taxRate / 100);
+    const totalInvestment = apartmentPrice + taxes + remodeling;
+    const contribution = totalInvestment * (contributionPercent / 100);
+    const mortgage = totalInvestment - contribution;
+    setMortgageAmount(mortgage);
+  }, [apartmentPrice, taxRate, remodeling, contributionPercent]);
 
   return (
     <div className="container mx-auto py-6">
@@ -756,9 +763,8 @@ export default function RealEstateCalculator() {
                             id="mortgage-amount"
                             step={2500}
                             type="number"
-                            value={mortgageAmount.toFixed(0)}
-                            onChange={(e) => setMortgageAmount(Number(e.target.value))}
-                            disabled={selectedBankId !== null}
+                            value={totalInvestment - contributionAmount}
+                            disabled={true}
                           />
                         </div>
                       </div>

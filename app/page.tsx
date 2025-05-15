@@ -78,8 +78,9 @@ export default function RealEstateCalculator() {
   // Calculate total investment
   const totalInvestment = apartmentPrice + apartmentPrice * (taxRate / 100) + remodeling
 
-  // Calculate total expenses
+  // Calculate total expenses (now annual)
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const monthlyExpenses = totalExpenses / 12;
 
   // Handle contribution amount change (updates the percentage)
   const handleContributionAmountChange = (amount: number) => {
@@ -131,7 +132,7 @@ export default function RealEstateCalculator() {
   // Calculate rental income and profitability
   useEffect(() => {
     const annual = monthlyRent * 12
-    const annualExpenses = totalExpenses * 12
+    const annualExpenses = totalExpenses // Now directly using annual expenses
     const totalInvestment = apartmentPrice + apartmentPrice * (taxRate / 100) + remodeling
     const profit = ((annual - annualExpenses) / totalInvestment) * 100
 
@@ -814,14 +815,14 @@ export default function RealEstateCalculator() {
                             value={monthlyRent}
                             onChange={(e) => setMonthlyRent(Number(e.target.value))}
                           />
-                          <span className="text-sm text-muted-foreground w-24">{formatCurrency(monthlyRent - totalExpenses - irpfAmount / 12)}</span>
+                          <span className="text-sm text-muted-foreground w-24">{formatCurrency(monthlyRent - monthlyExpenses - irpfAmount / 12)}</span>
                         </div>
                       </div>
 
                       {/* Replace maintenance expenses field with expenses management */}
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <Label>Monthly Expenses</Label>
+                          <Label>Annual Expenses</Label>
                           <Button variant="outline" size="sm" onClick={() => setIsAddingExpense(true)}>
                             <Plus className="h-4 w-4 mr-1" /> Add Expense
                           </Button>
@@ -856,8 +857,8 @@ export default function RealEstateCalculator() {
                         <Dialog open={isAddingExpense} onOpenChange={setIsAddingExpense}>
                           <DialogContent>
                             <DialogHeader>
-                              <DialogTitle>Add New Expense</DialogTitle>
-                              <DialogDescription>Enter the name and amount of the new expense.</DialogDescription>
+                              <DialogTitle>Add New Annual Expense</DialogTitle>
+                              <DialogDescription>Enter the name and annual amount of the new expense.</DialogDescription>
                             </DialogHeader>
                             <div className="grid gap-4 py-4">
                               <div className="grid grid-cols-4 items-center gap-4">
@@ -873,7 +874,7 @@ export default function RealEstateCalculator() {
                               </div>
                               <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="expense-amount" className="text-right">
-                                  Amount
+                                  Annual Amount
                                 </Label>
                                 <Input
                                   id="expense-amount"
@@ -905,7 +906,7 @@ export default function RealEstateCalculator() {
                         <CardContent>
                           <div className="text-2xl font-bold">{formatCurrency(annualRent)}</div>
                           <p className="text-sm text-muted-foreground mt-1">
-                            Maintenance: {formatCurrency(annualMaintenance)}
+                            Expenses: {formatCurrency(annualMaintenance)}
                           </p>
                           <p className="text-sm font-medium mt-1">
                             Net: {formatCurrency(annualRent - annualMaintenance)}
@@ -928,9 +929,9 @@ export default function RealEstateCalculator() {
                         </CardHeader>
                         <CardContent>
                           <div
-                            className={`text-2xl font-bold ${(monthlyRent - totalExpenses - monthlyPayment) >= 0 ? "text-green-600" : "text-red-600"}`}
+                            className={`text-2xl font-bold ${(monthlyRent - monthlyExpenses - monthlyPayment) >= 0 ? "text-green-600" : "text-red-600"}`}
                           >
-                            {formatCurrency(monthlyRent - totalExpenses - monthlyPayment)}
+                            {formatCurrency(monthlyRent - monthlyExpenses - monthlyPayment)}
                           </div>
                         </CardContent>
                       </Card>
@@ -1063,7 +1064,7 @@ export default function RealEstateCalculator() {
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium text-muted-foreground">Net monthly income</h3>
-                      <p className="text-2xl font-bold">{formatCurrency(monthlyRent - totalExpenses - irpfAmount / 12)}</p>
+                      <p className="text-2xl font-bold">{formatCurrency(monthlyRent - monthlyExpenses - irpfAmount / 12)}</p>
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium text-muted-foreground">Monthly Cashflow</h3>
@@ -1175,7 +1176,7 @@ export default function RealEstateCalculator() {
                       <div className="text-sm font-medium text-right">{formatCurrency(monthlyRent)}</div>
 
                       <div className="text-sm">Monthly Expenses:</div>
-                      <div className="text-sm font-medium text-right">-{formatCurrency(totalExpenses)}</div>
+                      <div className="text-sm font-medium text-right">-{formatCurrency(monthlyExpenses)}</div>
 
                       <div className="text-sm">Monthly Tax (IRPF):</div>
                       <div className="text-sm font-medium text-right">-{formatCurrency(irpfAmount / 12)}</div>
@@ -1184,7 +1185,7 @@ export default function RealEstateCalculator() {
 
                       <div className="text-sm font-medium">Net Monthly Income:</div>
                       <div className="text-sm font-bold text-right">
-                        {formatCurrency(monthlyRent - totalExpenses - irpfAmount / 12)}
+                        {formatCurrency(monthlyRent - monthlyExpenses - irpfAmount / 12)}
                       </div>
 
                       <Separator className="col-span-2 my-1" />
@@ -1216,7 +1217,7 @@ export default function RealEstateCalculator() {
                     <div className="grid grid-cols-2 gap-y-3">
                       <div className="text-sm">Net Monthly Rental Income:</div>
                       <div className="text-sm font-medium text-right">
-                        {formatCurrency(monthlyRent - totalExpenses - irpfAmount / 12)}
+                        {formatCurrency(monthlyRent - monthlyExpenses - irpfAmount / 12)}
                       </div>
 
                       <div className="text-sm">Monthly Mortgage Payment:</div>

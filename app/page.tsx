@@ -61,7 +61,10 @@ export default function RealEstateCalculator() {
 
   // Rental state
   const [monthlyRent, setMonthlyRent] = useState(1600)
-  const [maintenanceExpenses, setMaintenanceExpenses] = useState(100)
+  const [expenses, setExpenses] = useState<Array<{ id: string; name: string; amount: number }>>([]);
+  const [isAddingExpense, setIsAddingExpense] = useState(false);
+  const [newExpenseName, setNewExpenseName] = useState('');
+  const [newExpenseAmount, setNewExpenseAmount] = useState('');
   const [annualRent, setAnnualRent] = useState(0)
   const [annualMaintenance, setAnnualMaintenance] = useState(0)
   const [profitability, setProfitability] = useState(0)
@@ -74,6 +77,9 @@ export default function RealEstateCalculator() {
 
   // Calculate total investment
   const totalInvestment = apartmentPrice + apartmentPrice * (taxRate / 100) + remodeling
+
+  // Calculate total expenses
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   // Handle contribution amount change (updates the percentage)
   const handleContributionAmountChange = (amount: number) => {
@@ -125,14 +131,14 @@ export default function RealEstateCalculator() {
   // Calculate rental income and profitability
   useEffect(() => {
     const annual = monthlyRent * 12
-    const annualMaint = maintenanceExpenses * 12
+    const annualExpenses = totalExpenses * 12
     const totalInvestment = apartmentPrice + apartmentPrice * (taxRate / 100) + remodeling
-    const profit = ((annual - annualMaint) / totalInvestment) * 100
+    const profit = ((annual - annualExpenses) / totalInvestment) * 100
 
     setAnnualRent(annual)
-    setAnnualMaintenance(annualMaint)
+    setAnnualMaintenance(annualExpenses)
     setProfitability(profit)
-  }, [monthlyRent, maintenanceExpenses, apartmentPrice, taxRate, remodeling])
+  }, [monthlyRent, totalExpenses, apartmentPrice, taxRate, remodeling])
 
   // Calculate tax implications
   useEffect(() => {
@@ -242,7 +248,7 @@ export default function RealEstateCalculator() {
       mortgageYears,
       interestRate,
       monthlyRent,
-      maintenanceExpenses,
+      totalExpenses,
       irpfRate
     };
     
@@ -325,7 +331,7 @@ export default function RealEstateCalculator() {
         if ('mortgageYears' in importedState) setMortgageYears(importedState.mortgageYears);
         if ('interestRate' in importedState) setInterestRate(importedState.interestRate);
         if ('monthlyRent' in importedState) setMonthlyRent(importedState.monthlyRent);
-        if ('maintenanceExpenses' in importedState) setMaintenanceExpenses(importedState.maintenanceExpenses);
+        if ('totalExpenses' in importedState) setExpenses(expenses.map(expense => ({ ...expense, amount: importedState.totalExpenses })));
         if ('irpfRate' in importedState) setIrpfRate(importedState.irpfRate);
         
         // Reset bank selection since we've changed core values
@@ -348,6 +354,33 @@ export default function RealEstateCalculator() {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
+  };
+
+  // Add new expense
+  const handleAddExpense = () => {
+    if (newExpenseName && newExpenseAmount) {
+      const newExpense = {
+        id: Date.now().toString(),
+        name: newExpenseName,
+        amount: Number(newExpenseAmount)
+      };
+      setExpenses([...expenses, newExpense]);
+      setNewExpenseName('');
+      setNewExpenseAmount('');
+      setIsAddingExpense(false);
+    }
+  };
+
+  // Remove expense
+  const handleRemoveExpense = (id: string) => {
+    setExpenses(expenses.filter(expense => expense.id !== id));
+  };
+
+  // Update expense amount
+  const handleUpdateExpense = (id: string, amount: number) => {
+    setExpenses(expenses.map(expense => 
+      expense.id === id ? { ...expense, amount } : expense
+    ));
   };
 
   return (
@@ -781,24 +814,84 @@ export default function RealEstateCalculator() {
                             value={monthlyRent}
                             onChange={(e) => setMonthlyRent(Number(e.target.value))}
                           />
-                          <span className="text-sm text-muted-foreground w-24">{formatCurrency(monthlyRent - maintenanceExpenses - irpfAmount / 12)}</span>
+                          <span className="text-sm text-muted-foreground w-24">{formatCurrency(monthlyRent - totalExpenses - irpfAmount / 12)}</span>
                         </div>
                       </div>
 
-                      {/* Maintenance expenses field */}
+                      {/* Replace maintenance expenses field with expenses management */}
                       <div className="space-y-2">
-                        <Label htmlFor="maintenance-expenses">Monthly Maintenance Expenses</Label>
-                        <div className="flex items-center space-x-2">
-                          <Input
-                            id="maintenance-expenses"
-                            type="number"
-                            value={maintenanceExpenses}
-                            onChange={(e) => setMaintenanceExpenses(Number(e.target.value))}
-                          />
-                          <span className="text-sm text-muted-foreground w-24">
-                            {formatCurrency(maintenanceExpenses)}
-                          </span>
+                        <div className="flex justify-between items-center">
+                          <Label>Monthly Expenses</Label>
+                          <Button variant="outline" size="sm" onClick={() => setIsAddingExpense(true)}>
+                            <Plus className="h-4 w-4 mr-1" /> Add Expense
+                          </Button>
                         </div>
+                        
+                        <div className="space-y-2">
+                          {expenses.map((expense) => (
+                            <div key={expense.id} className="flex items-center space-x-2">
+                              <Input
+                                type="text"
+                                value={expense.name}
+                                disabled
+                                className="w-1/3"
+                              />
+                              <Input
+                                type="number"
+                                value={expense.amount}
+                                onChange={(e) => handleUpdateExpense(expense.id, Number(e.target.value))}
+                                className="w-1/3"
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveExpense(expense.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+
+                        <Dialog open={isAddingExpense} onOpenChange={setIsAddingExpense}>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Add New Expense</DialogTitle>
+                              <DialogDescription>Enter the name and amount of the new expense.</DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="expense-name" className="text-right">
+                                  Name
+                                </Label>
+                                <Input
+                                  id="expense-name"
+                                  value={newExpenseName}
+                                  onChange={(e) => setNewExpenseName(e.target.value)}
+                                  className="col-span-3"
+                                />
+                              </div>
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="expense-amount" className="text-right">
+                                  Amount
+                                </Label>
+                                <Input
+                                  id="expense-amount"
+                                  type="number"
+                                  value={newExpenseAmount}
+                                  onChange={(e) => setNewExpenseAmount(e.target.value)}
+                                  className="col-span-3"
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setIsAddingExpense(false)}>
+                                Cancel
+                              </Button>
+                              <Button onClick={handleAddExpense}>Add Expense</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </div>
 
@@ -835,9 +928,9 @@ export default function RealEstateCalculator() {
                         </CardHeader>
                         <CardContent>
                           <div
-                            className={`text-2xl font-bold ${(monthlyRent - maintenanceExpenses - monthlyPayment) >= 0 ? "text-green-600" : "text-red-600"}`}
+                            className={`text-2xl font-bold ${(monthlyRent - totalExpenses - monthlyPayment) >= 0 ? "text-green-600" : "text-red-600"}`}
                           >
-                            {formatCurrency(monthlyRent - maintenanceExpenses - monthlyPayment)}
+                            {formatCurrency(monthlyRent - totalExpenses - monthlyPayment)}
                           </div>
                         </CardContent>
                       </Card>
@@ -970,7 +1063,7 @@ export default function RealEstateCalculator() {
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium text-muted-foreground">Net monthly income</h3>
-                      <p className="text-2xl font-bold">{formatCurrency(monthlyRent - maintenanceExpenses - irpfAmount / 12)}</p>
+                      <p className="text-2xl font-bold">{formatCurrency(monthlyRent - totalExpenses - irpfAmount / 12)}</p>
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium text-muted-foreground">Monthly Cashflow</h3>
@@ -1081,8 +1174,8 @@ export default function RealEstateCalculator() {
                       <div className="text-sm">Monthly Rent:</div>
                       <div className="text-sm font-medium text-right">{formatCurrency(monthlyRent)}</div>
 
-                      <div className="text-sm">Monthly Maintenance:</div>
-                      <div className="text-sm font-medium text-right">-{formatCurrency(maintenanceExpenses)}</div>
+                      <div className="text-sm">Monthly Expenses:</div>
+                      <div className="text-sm font-medium text-right">-{formatCurrency(totalExpenses)}</div>
 
                       <div className="text-sm">Monthly Tax (IRPF):</div>
                       <div className="text-sm font-medium text-right">-{formatCurrency(irpfAmount / 12)}</div>
@@ -1091,7 +1184,7 @@ export default function RealEstateCalculator() {
 
                       <div className="text-sm font-medium">Net Monthly Income:</div>
                       <div className="text-sm font-bold text-right">
-                        {formatCurrency(monthlyRent - maintenanceExpenses - irpfAmount / 12)}
+                        {formatCurrency(monthlyRent - totalExpenses - irpfAmount / 12)}
                       </div>
 
                       <Separator className="col-span-2 my-1" />
@@ -1123,7 +1216,7 @@ export default function RealEstateCalculator() {
                     <div className="grid grid-cols-2 gap-y-3">
                       <div className="text-sm">Net Monthly Rental Income:</div>
                       <div className="text-sm font-medium text-right">
-                        {formatCurrency(monthlyRent - maintenanceExpenses - irpfAmount / 12)}
+                        {formatCurrency(monthlyRent - totalExpenses - irpfAmount / 12)}
                       </div>
 
                       <div className="text-sm">Monthly Mortgage Payment:</div>

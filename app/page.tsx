@@ -644,13 +644,6 @@ export default function RealEstateCalculator() {
                       <div className="mb-4">
                         <Label className="mb-2 block">Select Bank Offer</Label>
                         <div className="flex flex-wrap gap-2">
-                          <Button
-                            variant={selectedBankId === null ? "default" : "outline"}
-                            size="sm"
-                            onClick={handleResetToCalculated}
-                          >
-                            Calculated
-                          </Button>
                           {bankOffers.map((bank) => (
                             <div key={bank.id} className="flex items-center gap-1">
                               <Button

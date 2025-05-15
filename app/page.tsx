@@ -75,11 +75,19 @@ export default function RealEstateCalculator() {
   const [irpfAmount, setIrpfAmount] = useState(0)
   const [cashflow, setCashflow] = useState(0)
   const [monthlyCashflow, setMonthlyCashflow] = useState(0)
+  const [includeAdditionalCosts, setIncludeAdditionalCosts] = useState(false)
+  const [totalContribution, setTotalContribution] = useState(0)
 
   // Total investment
   const totalInvestment = apartmentPrice + apartmentPrice * (taxRate / 100) + remodeling
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const monthlyExpenses = totalExpenses / 12;
+  const additionalCosts = apartmentPrice * (taxRate / 100) + remodeling
+
+  // Update total contribution when relevant values change
+  useEffect(() => {
+    setTotalContribution(contributionAmount + (includeAdditionalCosts ? additionalCosts : 0));
+  }, [contributionAmount, includeAdditionalCosts, additionalCosts]);
 
   const handleContributionAmountChange = (amount: number) => {
     const newPercentage = (amount / totalInvestment) * 100;
@@ -95,7 +103,7 @@ export default function RealEstateCalculator() {
                 ...bank, 
                 contributionPercent: clampedPercentage, 
                 contributionAmount: amount,
-                mortgageAmount: totalInvestment - amount
+                mortgageAmount: totalInvestment - (includeAdditionalCosts ? amount + additionalCosts : amount)
               }
             : bank
         )
@@ -115,7 +123,25 @@ export default function RealEstateCalculator() {
                 ...bank, 
                 contributionPercent: percentage, 
                 contributionAmount: amount,
-                mortgageAmount: totalInvestment - amount
+                mortgageAmount: totalInvestment - (includeAdditionalCosts ? amount + additionalCosts : amount)
+              }
+            : bank
+        )
+      );
+    }
+  };
+
+  // Handle include additional costs change
+  const handleIncludeAdditionalCostsChange = (checked: boolean) => {
+    setIncludeAdditionalCosts(checked);
+    
+    if (selectedBankId) {
+      setBankOffers(prevOffers => 
+        prevOffers.map(bank => 
+          bank.id === selectedBankId 
+            ? { 
+                ...bank, 
+                mortgageAmount: totalInvestment - (checked ? bank.contributionAmount + additionalCosts : bank.contributionAmount)
               }
             : bank
         )
@@ -141,7 +167,7 @@ export default function RealEstateCalculator() {
 
   // Calculate mortgage details
   useEffect(() => {
-    const mortgage = totalInvestment - contributionAmount;
+    const mortgage = totalInvestment - totalContribution;
     if (mortgage > 0 && mortgageYears > 0 && interestRate > 0) {
       const monthlyRate = interestRate / 100 / 12
       const numberOfPayments = mortgageYears * 12
@@ -158,7 +184,7 @@ export default function RealEstateCalculator() {
       setTotalInterest(interest)
       setTotalMortgage(total)
     }
-  }, [totalInvestment, contributionAmount, mortgageYears, interestRate])
+  }, [totalInvestment, contributionAmount, mortgageYears, interestRate, totalContribution])
 
   // Calculate rental income and profitability
   useEffect(() => {
@@ -170,7 +196,7 @@ export default function RealEstateCalculator() {
     setAnnualRent(annual)
     setAnnualMaintenance(annualExpenses)
     setProfitability(profit)
-  }, [monthlyRent, totalExpenses, apartmentPrice, taxRate, remodeling])
+  }, [monthlyRent, totalExpenses, apartmentPrice, taxRate, remodeling, includeAdditionalCosts])
 
   // Calculate tax implications
   useEffect(() => {
@@ -182,7 +208,7 @@ export default function RealEstateCalculator() {
     setIrpfAmount(irpf)
     setCashflow(cf)
     setMonthlyCashflow(cf / 12)
-  }, [annualRent, annualMaintenance, irpfRate, monthlyPayment])
+  }, [annualRent, annualMaintenance, irpfRate, monthlyPayment, includeAdditionalCosts])
 
   // Handle bank selection
   useEffect(() => {
@@ -472,10 +498,12 @@ export default function RealEstateCalculator() {
       prevOffers.map(bank => ({
         ...bank,
         contributionAmount: totalInvestment * (bank.contributionPercent / 100),
-        mortgageAmount: totalInvestment - (totalInvestment * (bank.contributionPercent / 100))
+        mortgageAmount: totalInvestment - (includeAdditionalCosts ? 
+          (totalInvestment * (bank.contributionPercent / 100)) + additionalCosts : 
+          totalInvestment * (bank.contributionPercent / 100))
       }))
     );
-  }, [totalInvestment]);
+  }, [totalInvestment, includeAdditionalCosts, additionalCosts]);
 
   return (
     <div className="container mx-auto py-6">
@@ -749,7 +777,7 @@ export default function RealEstateCalculator() {
 
                       <div className="space-y-2">
                         <Label htmlFor="contribution" className="text-sm">Your Contribution</Label>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-3 gap-3">
                           {/* Percentage input */}
                           <div className="space-y-1">
                             <Label htmlFor="contributionPercent" className="text-xs">Percentage</Label>
@@ -795,7 +823,37 @@ export default function RealEstateCalculator() {
                               <span className="text-sm text-muted-foreground">€</span>
                             </div>
                           </div>
+                          {/* Total Contribution row */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="totalContribution" className="text-xs">Total Contribution</Label>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id="includeAdditionalCosts"
+                                checked={includeAdditionalCosts}
+                                onChange={(e) => handleIncludeAdditionalCostsChange(e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300"
+                              />
+                              <Label htmlFor="includeAdditionalCosts" className="text-xs text-muted-foreground">
+                                Include additional costs
+                              </Label>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Input
+                              id="totalContribution"
+                              type="number"
+                              className="text-sm"
+                              value={totalContribution.toFixed(0)}
+                              disabled
+                            />
+                            <span className="text-sm text-muted-foreground">€</span>
+                          </div>
                         </div>
+                        </div>
+
+                        
                       </div>
 
                       <Separator />
@@ -808,7 +866,7 @@ export default function RealEstateCalculator() {
                             id="mortgage-amount"
                             step={2500}
                             type="number"
-                            value={totalInvestment - contributionAmount}
+                            value={totalInvestment - totalContribution}
                             disabled={true}
                           />
                         </div>

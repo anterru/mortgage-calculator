@@ -217,6 +217,7 @@ export default function RealEstateCalculator() {
       style: "currency",
       currency: "EUR",
       maximumFractionDigits: 0,
+      useGrouping: true
     }).format(value)
   }
 
@@ -494,6 +495,7 @@ export default function RealEstateCalculator() {
                         <div className="flex items-center space-x-2">
                           <Input
                             id="apartment-price"
+                            step={2500}
                             type="number"
                             value={apartmentPrice}
                             onChange={(e) => setApartmentPrice(Number(e.target.value))}
@@ -522,6 +524,7 @@ export default function RealEstateCalculator() {
                         <div className="flex items-center space-x-2">
                           <Input
                             id="remodeling"
+                            step={100}
                             type="number"
                             value={remodeling}
                             onChange={(e) => setRemodeling(Number(e.target.value))}
@@ -540,6 +543,7 @@ export default function RealEstateCalculator() {
                               <Input
                                 id="contributionPercent"
                                 type="number"
+                                step={2500}
                                 min={0}
                                 max={100}
                                 className="text-sm"
@@ -774,13 +778,14 @@ export default function RealEstateCalculator() {
                             step={1}
                             value={mortgageYears}
                             onChange={(e) => {
-                              const value = Number(e.target.value);
-                              if (value >= 5 && value <= 40) {
+                              const value = Math.round(Number(e.target.value));
+                              if (!isNaN(value) && value >= 5 && value <= 40) {
                                 setMortgageYears(value);
                               }
                             }}
                             disabled={selectedBankId !== null}
                           />
+                          <span className="text-sm font-medium w-12">{mortgageYears} yrs</span>
                         </div>
                       </div>
 
@@ -860,6 +865,7 @@ export default function RealEstateCalculator() {
                           <Input
                             id="monthly-rent"
                             type="number"
+                            step={50}
                             value={monthlyRent}
                             onChange={(e) => setMonthlyRent(Number(e.target.value))}
                           />
@@ -1263,24 +1269,7 @@ export default function RealEstateCalculator() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-y-3">
-                      <div className="text-sm">Net Monthly Rental Income:</div>
-                      <div className="text-sm font-medium text-right">
-                        {formatCurrency(monthlyRent - monthlyExpenses - irpfAmount / 12)}
-                      </div>
 
-                      <div className="text-sm">Monthly Mortgage Payment:</div>
-                      <div className="text-sm font-medium text-right">-{formatCurrency(monthlyPayment)}</div>
-
-                      <Separator className="col-span-2 my-1" />
-
-                      <div className="text-sm font-medium">Monthly Cashflow:</div>
-                      <div
-                        className={`text-sm font-bold text-right ${monthlyCashflow >= 0 ? "text-green-600" : "text-red-600"}`}
-                      >
-                        {formatCurrency(monthlyCashflow)}
-                      </div>
-
-                      <Separator className="col-span-2 my-1" />
 
                       <div className="text-sm">Net Annual Rental Income:</div>
                       <div className="text-sm font-medium text-right">

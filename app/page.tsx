@@ -472,7 +472,7 @@ export default function RealEstateCalculator() {
                     <CardDescription>Enter the details of the apartment purchase</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="apartment-price">Apartment Price</Label>
                         <div className="flex items-center space-x-2">
@@ -516,56 +516,7 @@ export default function RealEstateCalculator() {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="contribution" className="text-sm">Your Contribution</Label>
-                        <div className="grid grid-cols-2 gap-3">
-                          {/* Percentage input */}
-                          <div className="space-y-1">
-                            <Label htmlFor="contributionPercent" className="text-xs">Percentage</Label>
-                            <div className="flex items-center space-x-2">
-                              <Input
-                                id="contributionPercent"
-                                type="number"
-                                step={0.1}
-                                min={0}
-                                max={100}
-                                className="text-sm"
-                                value={contributionPercent.toFixed(2)}
-                                onChange={(e) => {
-                                  const value = Number(e.target.value);
-                                  if (value >= 0 && value <= 100) {
-                                    setContributionPercent(value);
-                                  }
-                                }}
-                              />
-                              <span className="text-sm font-medium">%</span>
-                            </div>
-                          </div>
-                          
-                          {/* Amount input */}
-                          <div className="space-y-1">
-                            <Label htmlFor="contributionAmount" className="text-xs">Amount</Label>
-                            <div className="flex items-center space-x-2">
-                              <Input
-                                id="contributionAmount"
-                                type="number"
-                                step={2500}
-                                min={0}
-                                max={totalInvestment}
-                                className="text-sm"
-                                value={contributionAmount.toFixed(0)}
-                                onChange={(e) => {
-                                  const value = Number(e.target.value);
-                                  if (value >= 0 && value <= totalInvestment) {
-                                    handleContributionAmountChange(value);
-                                  }
-                                }}
-                              />
-                              <span className="text-sm text-muted-foreground">€</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                     
                     </div>
 
                     <Separator />
@@ -724,6 +675,61 @@ export default function RealEstateCalculator() {
                         <Separator className="my-4" />
                       </div>
                     )}
+
+                    
+
+                      <div className="space-y-2">
+                        <Label htmlFor="contribution" className="text-sm">Your Contribution</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Percentage input */}
+                          <div className="space-y-1">
+                            <Label htmlFor="contributionPercent" className="text-xs">Percentage</Label>
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                id="contributionPercent"
+                                type="number"
+                                step={0.1}
+                                min={0}
+                                max={100}
+                                className="text-sm"
+                                value={contributionPercent.toFixed(2)}
+                                onChange={(e) => {
+                                  const value = Number(e.target.value);
+                                  if (value >= 0 && value <= 100) {
+                                    setContributionPercent(value);
+                                  }
+                                }}
+                              />
+                              <span className="text-sm font-medium">%</span>
+                            </div>
+                          </div>
+                          
+                          {/* Amount input */}
+                          <div className="space-y-1">
+                            <Label htmlFor="contributionAmount" className="text-xs">Amount</Label>
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                id="contributionAmount"
+                                type="number"
+                                step={2500}
+                                min={0}
+                                max={totalInvestment}
+                                className="text-sm"
+                                value={contributionAmount.toFixed(0)}
+                                onChange={(e) => {
+                                  const value = Number(e.target.value);
+                                  if (value >= 0 && value <= totalInvestment) {
+                                    handleContributionAmountChange(value);
+                                  }
+                                }}
+                              />
+                              <span className="text-sm text-muted-foreground">€</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Separator />
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                       <div className="space-y-3">

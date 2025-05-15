@@ -233,6 +233,7 @@ export default function RealEstateCalculator() {
       contributionPercent,
       
       // Mortgage details
+      mortgageAmount,
       mortgageYears,
       interestRate,
       
@@ -371,6 +372,7 @@ export default function RealEstateCalculator() {
         if ('taxRate' in importedState) setTaxRate(Number(importedState.taxRate));
         if ('remodeling' in importedState) setRemodeling(Number(importedState.remodeling));
         if ('contributionPercent' in importedState) setContributionPercent(Number(importedState.contributionPercent));
+        if ('mortgageAmount' in importedState) setMortgageAmount(Number(importedState.mortgageAmount));
         if ('mortgageYears' in importedState) setMortgageYears(Number(importedState.mortgageYears));
         if ('interestRate' in importedState) setInterestRate(Number(importedState.interestRate));
         if ('monthlyRent' in importedState) setMonthlyRent(Number(importedState.monthlyRent));
@@ -535,7 +537,7 @@ export default function RealEstateCalculator() {
                               <Input
                                 id="contributionPercent"
                                 type="number"
-                                step={2500}
+                                step={0.1}
                                 min={0}
                                 max={100}
                                 className="text-sm"
@@ -752,6 +754,7 @@ export default function RealEstateCalculator() {
                         <div className="flex items-center space-x-2">
                           <Input
                             id="mortgage-amount"
+                            step={2500}
                             type="number"
                             value={mortgageAmount.toFixed(0)}
                             onChange={(e) => setMortgageAmount(Number(e.target.value))}
@@ -1122,92 +1125,6 @@ export default function RealEstateCalculator() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Investment and Mortgage Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Investment Breakdown */}
-                {/* <Card>
-                  <CardHeader>
-                    <CardTitle>Investment Breakdown</CardTitle>
-                    <CardDescription>How your investment is distributed</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-y-3">
-                      <div className="text-sm">Apartment Price:</div>
-                      <div className="text-sm font-medium text-right">{formatCurrency(apartmentPrice)}</div>
-
-                      <div className="text-sm">Taxes ({taxRate}%):</div>
-                      <div className="text-sm font-medium text-right">
-                        {formatCurrency(apartmentPrice * (taxRate / 100))}
-                      </div>
-
-                      <div className="text-sm">Remodeling:</div>
-                      <div className="text-sm font-medium text-right">{formatCurrency(remodeling)}</div>
-
-                      <Separator className="col-span-2 my-1" />
-
-                      <div className="text-sm font-medium">Total Investment:</div>
-                      <div className="text-sm font-bold text-right">{formatCurrency(totalInvestment)}</div>
-
-                      <Separator className="col-span-2 my-1" />
-
-                      <div className="text-sm">Your Contribution</div>
-                      <div className="text-sm font-medium text-right">{formatCurrency(contributionAmount)}</div>
-
-                      <div className="text-sm">Mortgage Needed:</div>
-                      <div className="text-sm font-medium text-right">{formatCurrency(mortgageAmount)}</div>
-
-                      <div className="text-sm">Mortgage Percentage:</div>
-                      <div className="text-sm font-medium text-right">
-                        {formatPercent((mortgageAmount / apartmentPrice) * 100)}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card> */}
-
-                {/* Mortgage Breakdown
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Mortgage Analysis</CardTitle>
-                    <CardDescription>
-                      Principal vs Interest over {mortgageYears} years
-                      {selectedBankId && (
-                        <Badge variant="outline" className="ml-2">
-                          {bankOffers.find((b) => b.id === selectedBankId)?.name}
-                        </Badge>
-                      )}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-y-3">
-                      <div className="text-sm">Principal Amount:</div>
-                      <div className="text-sm font-medium text-right">{formatCurrency(mortgageAmount)}</div>
-
-                      <div className="text-sm">Total Interest:</div>
-                      <div className="text-sm font-medium text-right">{formatCurrency(totalInterest)}</div>
-
-                      <div className="text-sm font-medium">Total Mortgage Cost:</div>
-                      <div className="text-sm font-bold text-right">{formatCurrency(totalMortgage)}</div>
-
-                      <Separator className="col-span-2 my-2" />
-
-                      <div className="text-sm">Interest Rate:</div>
-                      <div className="text-sm font-medium text-right">{interestRate}%</div>
-
-                      <div className="text-sm">Loan Term:</div>
-                      <div className="text-sm font-medium text-right">{mortgageYears} years</div>
-
-                      <div className="text-sm">Monthly Payment:</div>
-                      <div className="text-sm font-medium text-right">{formatCurrency(monthlyPayment)}</div>
-
-                      <div className="text-sm">Interest to Principal Ratio:</div>
-                      <div className="text-sm font-medium text-right">
-                        {formatPercent(totalInterest / mortgageAmount)}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card> */}
-              </div>
 
               {/* Rental and Cashflow Analysis */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

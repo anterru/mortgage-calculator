@@ -75,22 +75,14 @@ export default function RealEstateCalculator() {
   const [cashflow, setCashflow] = useState(0)
   const [monthlyCashflow, setMonthlyCashflow] = useState(0)
 
-  // Calculate total investment
+  // Total investment
   const totalInvestment = apartmentPrice + apartmentPrice * (taxRate / 100) + remodeling
-
-  // Calculate total expenses (now annual)
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const monthlyExpenses = totalExpenses / 12;
 
-  // Handle contribution amount change (updates the percentage)
   const handleContributionAmountChange = (amount: number) => {
-    // Calculate new percentage based on amount
-    const newPercentage = (amount / totalInvestment) * 100;
-    
-    // Limit to valid percentage between 0-100
+    const newPercentage = (amount / apartmentPrice) * 100;
     const clampedPercentage = Math.min(Math.max(0, newPercentage), 100);
-    
-    // Update percentage state
     setContributionPercent(clampedPercentage);
   };
 
@@ -566,6 +558,7 @@ export default function RealEstateCalculator() {
                               <Input
                                 id="contributionAmount"
                                 type="number"
+                                step={2500}
                                 min={0}
                                 max={totalInvestment}
                                 className="text-sm"

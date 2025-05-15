@@ -667,8 +667,8 @@ export default function RealEstateCalculator() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                      <div className="space-y-3">
                         <Label htmlFor="mortgage-amount">Mortgage Amount</Label>
                         <div className="flex items-center space-x-2">
                           <Input
@@ -678,50 +678,55 @@ export default function RealEstateCalculator() {
                             onChange={(e) => setMortgageAmount(Number(e.target.value))}
                             disabled={selectedBankId !== null}
                           />
-                          <span className="text-sm text-muted-foreground w-24">{formatCurrency(mortgageAmount)}</span>
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <Label htmlFor="mortgage-years">Years to Pay Back</Label>
                         <div className="flex items-center space-x-2">
-                          <div className="flex-1">
-                            <Slider
-                              id="mortgage-years"
-                              min={5}
-                              max={40}
-                              step={1}
-                              value={[mortgageYears]}
-                              onValueChange={(value) => setMortgageYears(value[0])}
-                              disabled={selectedBankId !== null}
-                            />
-                          </div>
-                          <span className="text-sm font-medium w-12">{mortgageYears} yrs</span>
+                          <Input
+                            id="mortgage-years"
+                            type="number"
+                            min={5}
+                            max={40}
+                            step={1}
+                            value={mortgageYears}
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              if (value >= 5 && value <= 40) {
+                                setMortgageYears(value);
+                              }
+                            }}
+                            disabled={selectedBankId !== null}
+                          />
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <Label htmlFor="interest-rate">Interest Rate (%)</Label>
                         <div className="flex items-center space-x-2">
-                          <div className="flex-1">
-                            <Slider
-                              id="interest-rate"
-                              min={0.5}
-                              max={10}
-                              step={0.1}
-                              value={[interestRate]}
-                              onValueChange={(value) => setInterestRate(value[0])}
-                              disabled={selectedBankId !== null}
-                            />
-                          </div>
-                          <span className="text-sm font-medium w-12">{interestRate}%</span>
+                          <Input
+                            id="interest-rate"
+                            type="number"
+                            min={0.5}
+                            max={10}
+                            step={0.1}
+                            value={interestRate}
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              if (value >= 0.5 && value <= 10) {
+                                setInterestRate(value);
+                              }
+                            }}
+                            disabled={selectedBankId !== null}
+                          />
                         </div>
                       </div>
                     </div>
 
                     <Separator />
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                       <Card>
                         <CardHeader className="pb-2">
                           <CardTitle className="text-lg">Monthly Payment</CardTitle>
@@ -750,18 +755,6 @@ export default function RealEstateCalculator() {
                       </Card>
                     </div>
 
-                    <Accordion type="single" collapsible>
-                      <AccordionItem value="amortization">
-                        <AccordionTrigger>Amortization Schedule</AccordionTrigger>
-                        <AccordionContent>
-                          <div className="text-sm text-muted-foreground">
-                            The amortization schedule would show a detailed breakdown of each payment, including
-                            principal and interest portions. This would be a large table and could be implemented as a
-                            separate component.
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
                   </CardContent>
                 </Card>
               </div>
@@ -775,7 +768,7 @@ export default function RealEstateCalculator() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Rental Income Calculator</CardTitle>
-                    <CardDescription>Calculate potential rental income and profitability</CardDescription>
+                    <CardDescription>Before taxes</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -833,9 +826,6 @@ export default function RealEstateCalculator() {
                         </CardHeader>
                         <CardContent>
                           <div className="text-2xl font-bold">{profitability.toFixed(2)}%</div>
-                          <p className="text-sm text-muted-foreground">
-                            (Annual rent - Maintenance) / Total investment
-                          </p>
                         </CardContent>
                       </Card>
 
@@ -849,7 +839,6 @@ export default function RealEstateCalculator() {
                           >
                             {formatCurrency(monthlyRent - maintenanceExpenses - monthlyPayment)}
                           </div>
-                          <p className="text-sm text-muted-foreground">Rent - Maintenance - Mortgage (before taxes)</p>
                         </CardContent>
                       </Card>
                     </div>
@@ -861,29 +850,32 @@ export default function RealEstateCalculator() {
               <div className="space-y-4">
                 <div className="flex items-center">
                   <Calculator className="mr-2 h-5 w-5" />
-                  <h2 className="text-xl font-semibold">Tax Implications</h2>
+                  <h2 className="text-xl font-semibold">Income after Taxes</h2>
                 </div>
                 <Card>
                   <CardHeader>
                     <CardTitle>Tax Implications</CardTitle>
-                    <CardDescription>Calculate tax implications and cashflow</CardDescription>
+                    <CardDescription>Deduct taxes and calculate cashflow</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="irpf-rate">IRPF Tax Rate (%)</Label>
                         <div className="flex items-center space-x-2">
-                          <div className="flex-1">
-                            <Slider
-                              id="irpf-rate"
-                              min={0}
-                              max={50}
-                              step={1}
-                              value={[irpfRate]}
-                              onValueChange={(value) => setIrpfRate(value[0])}
-                            />
-                          </div>
-                          <span className="text-sm font-medium w-12">{irpfRate}%</span>
+                          <Input
+                            id="irpf-rate"
+                            type="number"
+                            min={0}
+                            max={50}
+                            step={1}
+                            value={irpfRate}
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              if (value >= 0 && value <= 50) {
+                                setIrpfRate(value);
+                              }
+                            }}
+                          />
                         </div>
                       </div>
                     </div>
@@ -947,11 +939,6 @@ export default function RealEstateCalculator() {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter>
-                    <p className="text-sm text-muted-foreground">
-                      Note: This is a simplified tax calculation. Consult with a tax professional for accurate advice.
-                    </p>
-                  </CardFooter>
                 </Card>
               </div>
             </div>

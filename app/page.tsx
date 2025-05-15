@@ -24,9 +24,11 @@ import { Badge } from "@/components/ui/badge"
 interface BankOffer {
   id: string
   name: string
-  mortgageAmount: number
   years: number
   interestRate: number
+  mortgageAmount: number
+  contributionPercent: number
+  contributionAmount: number
 }
 
 export default function RealEstateCalculator() {
@@ -56,6 +58,7 @@ export default function RealEstateCalculator() {
   const [newBankName, setNewBankName] = useState("")
   const [newBankYears, setNewBankYears] = useState("")
   const [newBankInterestRate, setNewBankInterestRate] = useState("")
+  const [newBankContributionPercent, setNewBankContributionPercent] = useState("20")
 
   // Rental state
   const [monthlyRent, setMonthlyRent] = useState(1600)
@@ -79,9 +82,45 @@ export default function RealEstateCalculator() {
   const monthlyExpenses = totalExpenses / 12;
 
   const handleContributionAmountChange = (amount: number) => {
-    const newPercentage = (amount / apartmentPrice) * 100;
+    const newPercentage = (amount / totalInvestment) * 100;
     const clampedPercentage = Math.min(Math.max(0, newPercentage), 100);
+    
     setContributionPercent(clampedPercentage);
+    
+    if (selectedBankId) {
+      setBankOffers(prevOffers => 
+        prevOffers.map(bank => 
+          bank.id === selectedBankId 
+            ? { 
+                ...bank, 
+                contributionPercent: clampedPercentage, 
+                contributionAmount: amount,
+                mortgageAmount: totalInvestment - amount
+              }
+            : bank
+        )
+      );
+    }
+  };
+
+  const handleContributionPercentChange = (percentage: number) => {
+    const amount = totalInvestment * (percentage / 100);
+    setContributionAmount(amount);
+    
+    if (selectedBankId) {
+      setBankOffers(prevOffers => 
+        prevOffers.map(bank => 
+          bank.id === selectedBankId 
+            ? { 
+                ...bank, 
+                contributionPercent: percentage, 
+                contributionAmount: amount,
+                mortgageAmount: totalInvestment - amount
+              }
+            : bank
+        )
+      );
+    }
   };
 
   // Calculate total investment and mortgage needed
@@ -152,19 +191,27 @@ export default function RealEstateCalculator() {
       if (selectedBank) {
         setMortgageYears(selectedBank.years)
         setInterestRate(selectedBank.interestRate)
+        setContributionPercent(selectedBank.contributionPercent)
+        setContributionAmount(selectedBank.contributionAmount)
       }
     }
   }, [selectedBankId, bankOffers])
 
   // Add a new bank offer
   const handleAddBank = () => {
-    if (newBankName && newBankYears && newBankInterestRate) {
+    if (newBankName && newBankYears && newBankInterestRate && newBankContributionPercent) {
+      const contributionPercent = Number(newBankContributionPercent);
+      const contributionAmount = totalInvestment * (contributionPercent / 100);
+      const mortgageAmount = totalInvestment - contributionAmount;
+
       const newBank: BankOffer = {
         id: Date.now().toString(),
         name: newBankName,
         years: Number(newBankYears),
         interestRate: Number(newBankInterestRate),
-        mortgageAmount: totalInvestment - contributionAmount
+        contributionPercent,
+        contributionAmount,
+        mortgageAmount
       }
 
       setBankOffers([...bankOffers, newBank])
@@ -173,6 +220,7 @@ export default function RealEstateCalculator() {
       setNewBankName("")
       setNewBankYears("")
       setNewBankInterestRate("")
+      setNewBankContributionPercent("20")
       setIsAddingBank(false)
     }
   }
@@ -184,6 +232,8 @@ export default function RealEstateCalculator() {
       setSelectedBankId(null)
       setMortgageYears(30) // Default
       setInterestRate(1.9) // Default
+      setContributionPercent(20) // Default
+      setContributionAmount(totalInvestment * 0.2) // Default 20%
     }
   }
 
@@ -416,6 +466,17 @@ export default function RealEstateCalculator() {
     ));
   };
 
+  // Update bank offers when total investment changes
+  useEffect(() => {
+    setBankOffers(prevOffers => 
+      prevOffers.map(bank => ({
+        ...bank,
+        contributionAmount: totalInvestment * (bank.contributionPercent / 100),
+        mortgageAmount: totalInvestment - (totalInvestment * (bank.contributionPercent / 100))
+      }))
+    );
+  }, [totalInvestment]);
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex flex-col space-y-4">
@@ -627,6 +688,21 @@ export default function RealEstateCalculator() {
                                 className="col-span-3"
                               />
                             </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="contribution-percent" className="text-right">
+                                Contribution (%)
+                              </Label>
+                              <Input
+                                id="contribution-percent"
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="100"
+                                value={newBankContributionPercent}
+                                onChange={(e) => setNewBankContributionPercent(e.target.value)}
+                                className="col-span-3"
+                              />
+                            </div>
                           </div>
                           <DialogFooter>
                             <Button variant="outline" onClick={() => setIsAddingBank(false)}>
@@ -689,7 +765,7 @@ export default function RealEstateCalculator() {
                                 onChange={(e) => {
                                   const value = Number(e.target.value);
                                   if (value >= 0 && value <= 100) {
-                                    setContributionPercent(value);
+                                    handleContributionPercentChange(value);
                                   }
                                 }}
                               />

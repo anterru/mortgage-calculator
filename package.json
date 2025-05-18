@@ -5,7 +5,7 @@
   "homepage": "https://anterru.github.io/mortgage-calculator",
   "scripts": {
     "dev": "next dev",
-    "build": "next build && next export",
+    "build": "next build",
     "deploy": "gh-pages -d out",
     "start": "next start",
     "lint": "next lint",

@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  assetPrefix: '/mortgage-calculator',
+  assetPrefix: '/mortgage-calculator/',
   basePath: '/mortgage-calculator',
   eslint: {
     ignoreDuringBuilds: true,
